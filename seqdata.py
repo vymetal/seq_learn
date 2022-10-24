@@ -23,7 +23,22 @@ def fragments(length=7):
          fr.append(v)
    return fr
    
+def getset(length=7):
+   fr=fragments(length=length)
+   positions=numpy.array((0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19),dtype=numpy.int32)
+   unk=length//2
+   X=[]
+   y=[]
+   for v in fr:
+      s=numpy.dot(v[unk,:20],positions) #get the aa
+      v[unk,:20]=numpy.zeros(20) #clean in it
+      y.append(s)
+      X.append(v.flatten())
+   return numpy.array(X),numpy.array(y)
    
 if __name__ == "__main__":
    f=fragments(11)
    print(len(f))
+   X,y=getset(7)
+   print (y)
+   print (X[3,:].reshape(7,23))
