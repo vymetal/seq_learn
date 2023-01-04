@@ -33,9 +33,7 @@ def getset(length=7):
    for v in fr:
       s=numpy.dot(v[unk,:20],positions) #get the aa
       v[unk,:20]=numpy.zeros(20) #clean in it
-      
-#      if v[unk,21]==1: continue
-      
+      #if v[unk,21]==1: continue
       y.append(s)
       X.append(v.flatten())
    return numpy.array(X),numpy.array(y)
