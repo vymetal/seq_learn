@@ -45,8 +45,13 @@ def toseq(v):
       vv=v[i*23:(i+1)*23]
       vsq=vv[:20]
       vss=vv[20:]
-      sq+="ACDEFGHIKLMNPQRSTVWY"[numpy.argmax(vsq)]
-      ss+="~HE"[numpy.argmax(vss)]
+      if numpy.max(vsq)>0: 
+         sq+="ACDEFGHIKLMNPQRSTVWY"[numpy.argmax(vsq)]
+      else: 
+         sq+='.'
+      if numpy.max(vss)>0:
+         ss+="~HE"[numpy.argmax(vss)]
+      else: ss+='.'
    return sq+'|'+ss
    
 if __name__ == "__main__":
@@ -57,3 +62,9 @@ if __name__ == "__main__":
    print("  A C D E F G H I K L M N P Q R S T V W Y ~ H E")
    print (X[0,:].reshape(7,23))
    print (toseq(X[0,:]))
+   for x,a in zip(X,y):
+      print(toseq(x),a)
+      
+   #X,y=getset(3)
+   
+      

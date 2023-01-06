@@ -34,7 +34,7 @@ def xsample(x0,size):
 
 
 def prepare_data(cat_size=1000, batch_size=10):
-    X,y=getset(7)
+    X,y=getset(3)
     X_train,X_test,y_train,y_test = train_test_split(X,y,random_state=1234567, shuffle=True, stratify=y)
 
     u,c=numpy.unique(y_train, return_counts=True)
@@ -67,7 +67,9 @@ class MLP(nn.Module):
     def __init__(self, n_inputs):
         super(MLP, self).__init__()
         N=n_inputs*4
-        self.bn=nn.BatchNorm1d(N)
+        self.bn1=nn.BatchNorm1d(N)
+        self.bn2=nn.BatchNorm1d(N)
+        self.bn3=nn.BatchNorm1d(N)
         
         self.hidden1 = nn.Linear(n_inputs, N)
         self.act1 = nn.LeakyReLU()
@@ -77,7 +79,7 @@ class MLP(nn.Module):
         self.hidden_last = nn.Linear(N, 20)
         self.act_last = nn.Softmax(dim=-1)
 
-        self.drop = nn.Dropout(0.5)
+        self.drop = nn.Dropout(0.0)
 
     # forward propagate input
     def forward(self, X):
@@ -85,12 +87,15 @@ class MLP(nn.Module):
 #        X = self.drop(X)
         X = self.hidden1(X)
         X = self.act1(X)
- #       X = self.drop(X)
-        X=self.bn(X)
+        X = self.drop(X)
+#        X=self.bn1(X)
         X = self.hidden2(X)
         X = self.act2(X)
+        X = self.drop(X)
+#        X=self.bn2(X)
+
         #last
- #       X = self.drop(X)        
+        X = self.drop(X)        
         X = self.hidden_last(X)
         X = self.act_last(X)
         return X
@@ -153,10 +158,10 @@ class PLModel(pl.LightningModule):
 
 
 
-model=PLModel(MLP(161))
+model=PLModel(MLP(23*3))
 #model=torch.load("model_last")
 
-train,test=prepare_data(1000,100)
+train,test=prepare_data(10000,1000)
 print(len(train))
 #model.dropout=nn.Dropout(0.5)
 for cyc in range(1):
