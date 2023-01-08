@@ -34,7 +34,7 @@ def xsample(x0,size):
 
 
 def prepare_data(cat_size=10000, batch_size=1000):
-    X,y=getset(7)
+    X,y=getset(3)
     X_train,X_test,y_train,y_test = train_test_split(X,y,random_state=1234567, shuffle=True, stratify=y)
 
     u,c=numpy.unique(y_train, return_counts=True)
@@ -67,27 +67,32 @@ class Reg(nn.Module):
     def __init__(self, n_inputs):
         super(Reg, self).__init__()
         self.lin1 = nn.Linear(n_inputs, 20)
+        self.lin2 = nn.Linear(n_inputs, 20)
         self.softmax = nn.Softmax(dim=-1)
         self.drop = nn.Dropout(0.0)
 
     # forward propagate input
     def forward(self, X):
 #        X = self.drop(X)
-        X = self.lin1(X)
-        X = self.softmax(X)
+        X1 = self.lin1(X)
+        X1 = self.softmax(X1)
+        X2 = self.lin2(X)
+        X2 = self.softmax(X2)
+        X=torch.max(X1,X2)
+        X=self.softmax(X)
         return X
 
 
 class PLModel(pl.LightningModule):
-    def __init__(self,model):
+    def __init__(self,model,C=0e-5):
         super().__init__()
         self.model=model
         self.lr=1.0e-3
-
+        self.C=C
     def training_step(self, batch, batch_idx):
         x, y = batch
         yhat = self.model(x)
-        loss = nn.functional.cross_entropy(yhat, y)
+        loss = nn.functional.cross_entropy(yhat, y) + self.C*torch.sum(torch.square(self.model.lin1.weight))
 
         ind = numpy.argmax(yhat.detach().numpy(),axis=1)
         accuracy=accuracy_score(ind,y)
@@ -96,7 +101,7 @@ class PLModel(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         x, y = batch
         yhat = self.model(x)
-        loss = nn.functional.cross_entropy(yhat, y)
+        loss = nn.functional.cross_entropy(yhat, y) + self.C*torch.sum(torch.square(self.model.lin1.weight))
         ind = numpy.argmax(yhat.detach().numpy(),axis=1)
         accuracy=accuracy_score(ind,y)
         return {'validation_loss':loss, "validation_accuracy":torch.Tensor([accuracy,])}
@@ -120,32 +125,33 @@ class PLModel(pl.LightningModule):
     
     def configure_optimizers(self):
         #optimizer = optim.Adam(self.parameters(), lr=1e-3)
-        #optimizer = optim.SGD(self.parameters(), lr=1e0, momentum=0.9)
-        optimizer = optim.AdamW(self.parameters(), lr=1e-2)
+        #optimizer = optim.SGD(self.parameters(), lr=1e-1, momentum=0.9)
+        optimizer = optim.AdamW(self.parameters(), lr=1e-3)
         return optimizer
 
 
 
 
-model=PLModel(Reg(23*7))
+model=PLModel(Reg(23*3))
 #model=torch.load("model_last")
 
 train,test=prepare_data(10000,1000)
 print(len(train))
-for cyc in range(1):
-    trainer = pl.Trainer(limit_train_batches=1000, max_epochs=100,log_every_n_steps=1,auto_lr_find=False)
+for cyc in range(10):
+    trainer = pl.Trainer(limit_train_batches=1000, max_epochs=10,log_every_n_steps=1,auto_lr_find=False)
     trainer.fit(model=model, train_dataloaders=train, val_dataloaders=test)
 
 
 
-tx=[x for x,_ in test][0]
-ty=[cat for _,cat in test][0].detach().numpy()
-print(ty)
-
-predictions = trainer.predict(model, tx)
-ind = [numpy.argmax(p) for p in predictions]
-accuracy=accuracy_score(ind,ty)
-print("Validation accuracy:", accuracy)
+#tx=[x for x,_ in test][0]
+#ty=[cat for _,cat in test][0].detach().numpy()
+#print(ty)
+#predictions = trainer.predict(model, tx)
+#ind = [numpy.argmax(p) for p in predictions]
+#accuracy=accuracy_score(ind,ty)
+#print("Validation accuracy:", accuracy)
 
 torch.save(model,"model_last")
 
+print (model.model.lin1.weight)
+print (torch.max(model.model.lin1.weight),torch.min(model.model.lin1.weight))
