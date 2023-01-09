@@ -24,7 +24,7 @@ def fragments(length=7):
          fr.append(v)
    return fr
    
-def getset(length=7):
+def getset(length=7, erase=True):
    fr=fragments(length=length)
    positions=numpy.array((0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19),dtype=numpy.int32)
    unk=length//2
@@ -32,14 +32,28 @@ def getset(length=7):
    y=[]
    for v in fr:
       s=numpy.dot(v[unk,:20],positions) #get the aa
-      v[unk,:20]=numpy.zeros(20) #clean in it
-      
-#      if v[unk,21]==1: continue
-      
+      if erase: v[unk,:20]=numpy.zeros(20) #clean in it
       y.append(s)
       X.append(v.flatten())
    return numpy.array(X),numpy.array(y)
 
+def toseq(v):
+   ln=len(v)//23  #
+   sq=""
+   ss=""
+   for i in range(ln):
+      vv=v[i*23:(i+1)*23]
+      vsq=vv[:20]
+      vss=vv[20:]
+      if numpy.max(vsq)>0: 
+         sq+="ACDEFGHIKLMNPQRSTVWY"[numpy.argmax(vsq)]
+      else: 
+         sq+='.'
+      if numpy.max(vss)>0:
+         ss+="~HE"[numpy.argmax(vss)]
+      else: ss+='.'
+   return sq+'|'+ss
+   
 if __name__ == "__main__":
    f=fragments(11)
    print(len(f))
@@ -47,3 +61,10 @@ if __name__ == "__main__":
    print (y)
    print("  A C D E F G H I K L M N P Q R S T V W Y ~ H E")
    print (X[0,:].reshape(7,23))
+   print (toseq(X[0,:]))
+   for x,a in zip(X,y):
+      print(toseq(x),a)
+      
+   #X,y=getset(3)
+   
+      

@@ -10,24 +10,61 @@ from sklearn.decomposition import PCA,NMF
 from sklearn.manifold import TSNE,MDS
 import umap
 import umap.plot
+import sklearn
+import numpy
+import random
 
 X,y=getset(7)
 X_train,X_test,y_train,y_test = train_test_split(X,y,random_state=1234567, shuffle=True)
 
+#accs=[]
+#yp=[i for i in y_test]
+#for cyc in range(1000):
+#   random.shuffle(yp)
+#   accs.append(sklearn.metrics.accuracy_score(y_test,yp))
+#print("random performance:", numpy.mean(accs))  ##0.0589
 
-#tf=umap.UMAP(metric='correlation')
-#R=tf.fit_transform(X_train)
-#umap.plot.points(tf,labels=y_train)
-#plt.scatter(R[:,0],R[:,1],alpha=0.1,s=1)
-#plt.show()
-#exit()
-#model=LogisticRegression() #solver="saga")
+model=LogisticRegression(class_weight='balanced',multi_class='multinomial') # solver="saga")
+model.fit(X_train, y_train)
+
+yp=model.predict(X_train)
+print (sklearn.metrics.accuracy_score(y_train,yp))
+proba=model.predict_proba(X_train)
+maxproba=numpy.max(proba, axis=1)
+
+cats=[int(p*20) for p in maxproba]
+for i in range(max(cats)+1):
+   ref=[c for c,b in zip(y_train,cats) if b==i]
+   ypred=[c for c,b in zip(yp,cats) if b==i]
+   print(i,sklearn.metrics.accuracy_score(ref,ypred), len(ref))
+
+
+ntrain=[x for x,p in zip(X_train, maxproba) if p<0.2]
+nytrain=[y for y,p in zip(y_train, maxproba) if p<0.2]
+model2=LogisticRegression(class_weight='balanced',multi_class='multinomial') # solver="saga")
+model2.fit(ntrain, nytrain)
+yp=model2.predict(ntrain)
+print (sklearn.metrics.accuracy_score(nytrain,yp))
+
+
+
+plt.hist(maxproba,bins=100)
+plt.show()
+
+
+
+yp=model.predict(X_test)
+print (sklearn.metrics.accuracy_score(y_test,yp))
+exit()
+
+
+
 #model=SGDClassifier(random_state=1234567, class_weight = "balanced")
 #model =SGDClassifier(alpha=0.001, class_weight='balanced', loss='log', random_state=1234567)
 
 #params={"loss":["hinge","log","modified_huber","perceptron","huber","epsilon_insensitive"], "penalty":["l1","l2"]}
 #search=GridSearchCV(model, params, verbose=100)
-params={}
+#params={}
 #params["alpha"]=[1e-7, 1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1e0]
 #search=RandomizedSearchCV(model, params, verbose=100, random_state=1234567)
 #search=GridSearchCV(model, params, verbose=100)
