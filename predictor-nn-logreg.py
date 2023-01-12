@@ -34,7 +34,7 @@ def xsample(x0,size):
 
 
 def prepare_data(cat_size=10000, batch_size=1000):
-    X,y=getset(3)
+    X,y=getset(7)
     X_train,X_test,y_train,y_test = train_test_split(X,y,random_state=1234567, shuffle=True, stratify=y)
 
     u,c=numpy.unique(y_train, return_counts=True)
@@ -79,12 +79,12 @@ class Reg(nn.Module):
         X2 = self.lin2(X)
         X2 = self.softmax(X2)
         X=torch.max(X1,X2)
-        X=self.softmax(X)
+        #X=self.softmax(X1)
         return X
 
 
 class PLModel(pl.LightningModule):
-    def __init__(self,model,C=0e-5):
+    def __init__(self,model,C=1e-6):
         super().__init__()
         self.model=model
         self.lr=1.0e-3
@@ -92,8 +92,10 @@ class PLModel(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x, y = batch
         yhat = self.model(x)
-        loss = nn.functional.cross_entropy(yhat, y) + self.C*torch.sum(torch.square(self.model.lin1.weight))
-
+        loss = nn.functional.cross_entropy(yhat, y)
+        loss += self.C*torch.sum(torch.square(self.model.lin1.weight))
+        loss += self.C*torch.sum(torch.square(self.model.lin2.weight))
+        
         ind = numpy.argmax(yhat.detach().numpy(),axis=1)
         accuracy=accuracy_score(ind,y)
         return {'loss':loss,'accuracy':torch.Tensor([accuracy,])}
@@ -115,6 +117,7 @@ class PLModel(pl.LightningModule):
     def validation_epoch_end(self, validation_step_outputs):
         self.log("vloss", torch.mean(torch.stack([x["validation_loss"] for x in validation_step_outputs])), prog_bar=True)
         self.log("vacc", torch.mean(torch.stack([x["validation_accuracy"] for x in validation_step_outputs])), prog_bar=True)
+        print()
         pass
          
     def predict_step(self, batch, batch_idx, dataloader_idx = 0):
@@ -126,19 +129,20 @@ class PLModel(pl.LightningModule):
     def configure_optimizers(self):
         #optimizer = optim.Adam(self.parameters(), lr=1e-3)
         #optimizer = optim.SGD(self.parameters(), lr=1e-1, momentum=0.9)
-        optimizer = optim.AdamW(self.parameters(), lr=1e-3)
+        optimizer = optim.AdamW(self.parameters(), self.lr)#lr=1e-3)
         return optimizer
 
 
 
 
-model=PLModel(Reg(23*3))
+model=PLModel(Reg(23*7))
 #model=torch.load("model_last")
 
 train,test=prepare_data(10000,1000)
 print(len(train))
-for cyc in range(10):
-    trainer = pl.Trainer(limit_train_batches=1000, max_epochs=10,log_every_n_steps=1,auto_lr_find=False)
+for cyc in range(1):
+    trainer = pl.Trainer(limit_train_batches=1000, max_epochs=100,log_every_n_steps=1,auto_lr_find=False)
+    #trainer.tune(model=model, train_dataloaders=train)
     trainer.fit(model=model, train_dataloaders=train, val_dataloaders=test)
 
 
