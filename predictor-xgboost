@@ -1,0 +1,17 @@
+#!/usr/bin/python
+from seqdata import getset
+from sklearn.model_selection import train_test_split
+import matplotlib.pylab as plt
+import sklearn
+import numpy
+import random
+from xgboost import XGBClassifier
+
+X,y=getset(7)
+X_train,X_test,y_train,y_test = train_test_split(X,y,random_state=1234567, shuffle=True)
+
+model=XGBClassifier()
+model.fit(X_train, y_train)
+yp=model.predict(X_test)
+print (sklearn.metrics.accuracy_score(y_test,yp))
+#proba=model1.predict_proba(X_train)
