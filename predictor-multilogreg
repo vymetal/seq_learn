@@ -1,0 +1,63 @@
+#!/usr/bin/python
+from seqdata import getset
+from sklearn.model_selection import train_test_split
+import matplotlib.pylab as plt
+import sklearn
+import numpy
+import random
+import copy
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import AdaBoostClassifier
+
+class multi():
+   def __init__(self):
+      return
+      
+   def fit(self, X,y):
+      self.n_class=max(y)+1
+      self.classifiers=[]
+      for c in range(self.n_class):
+            xc=[x for x,i in zip(X,y) if i==c ]
+            xo=[x for x,i in zip(X,y) if i!=c ]
+            ns=len(xc)
+            print (f"Class #{c}: {ns} samples")
+            random.shuffle(xo)
+            #self.classifiers.append(LogisticRegression(class_weight='balanced'))
+            self.classifiers.append(AdaBoostClassifier(n_estimators=10))
+            xx=numpy.concatenate([numpy.array(xc),numpy.array(xo)],axis=0)
+            yy=numpy.concatenate([numpy.ones(ns),numpy.zeros(len(xo))])
+            self.classifiers[-1].fit(xx,yy)
+
+   #         yp=self.classifiers[-1].predict(xx)
+   #         ac1=sklearn.metrics.accuracy_score(yy,yp)
+   #         yy=copy.deepcopy(y)
+   #         yy[yy==c]=-1
+   #         yy[yy>=0]=0
+   #         yy=numpy.abs(yy)
+   #         yp=self.classifiers[-1].predict(X)
+   #         ac2=sklearn.metrics.accuracy_score(yp,yy)
+   #         print(f"Training accuracy: {ac1},{ac2}")
+      return
+
+   def predict(self,X):
+      p=numpy.argmax(self.predict_proba(X),axis=1)
+      return p
+      
+   def predict_proba(self,X):
+      preds=[(cl.predict_proba(X)[:,1])[:,None] for cl in self.classifiers]
+      preds=numpy.concatenate(preds,axis=1)
+      preds=preds/numpy.sum(preds,axis=1)[:,None]
+      return preds
+
+
+X,y=getset(7)
+X_train,X_test,y_train,y_test = train_test_split(X,y,random_state=1234567, shuffle=True)
+
+model=multi()
+model.fit(X_train, y_train)
+yp=model.predict(X_test)
+print (sklearn.metrics.accuracy_score(y_test,yp))
+
+yp=model.predict(X_train)
+print (sklearn.metrics.accuracy_score(y_train,yp))
+
