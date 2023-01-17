@@ -6,6 +6,7 @@ import sklearn
 import numpy
 import random
 import copy
+from sklearn.metrics import confusion_matrix
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import AdaBoostClassifier
 
@@ -22,8 +23,8 @@ class multi():
             ns=len(xc)
             print (f"Class #{c}: {ns} samples")
             random.shuffle(xo)
-            #self.classifiers.append(LogisticRegression(class_weight='balanced'))
-            self.classifiers.append(AdaBoostClassifier(n_estimators=10))
+            self.classifiers.append(LogisticRegression(class_weight='balanced'))
+#            self.classifiers.append(AdaBoostClassifier(n_estimators=100))
             xx=numpy.concatenate([numpy.array(xc),numpy.array(xo)],axis=0)
             yy=numpy.concatenate([numpy.ones(ns),numpy.zeros(len(xo))])
             self.classifiers[-1].fit(xx,yy)
@@ -60,4 +61,8 @@ print (sklearn.metrics.accuracy_score(y_test,yp))
 
 yp=model.predict(X_train)
 print (sklearn.metrics.accuracy_score(y_train,yp))
+
+cm=confusion_matrix(y_train,yp)
+plt.imshow(numpy.log(cm))
+plt.show()
 
