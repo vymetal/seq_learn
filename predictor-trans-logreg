@@ -1,0 +1,93 @@
+#!/usr/bin/python
+from seqdata import getset, getset_ss,toseq
+from sklearn.model_selection import train_test_split
+import matplotlib.pylab as plt
+import sklearn
+import numpy
+import random
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import confusion_matrix
+import copy
+
+X,y=getset(7)
+#X=X[:1000]
+#y=y[:1000]
+X1_train,X1_test,y1_train,y1_test = train_test_split(X,y,random_state=1234567, shuffle=True)
+X,y=getset_ss(7)
+#X=X[:1000]
+#y=y[:1000]
+X2_train,X2_test,y2_train,y2_test = train_test_split(X,y,random_state=1234567, shuffle=True)
+
+
+print(toseq(X1_train[-1]))
+print(toseq(X2_train[-1]))
+#exit()
+
+model1=LogisticRegression(max_iter=500, class_weight='balanced', multi_class="multinomial")
+model1.fit(X1_train, y1_train)
+yp=model1.predict(X1_test)
+print (sklearn.metrics.accuracy_score(y1_test,yp))
+yp=model1.predict(X1_train)
+print (sklearn.metrics.accuracy_score(y1_train,yp))
+
+model2=LogisticRegression(max_iter=500, class_weight='balanced', multi_class="multinomial")
+model2.fit(X2_train, y2_train)
+yp=model2.predict(X2_test)
+print (sklearn.metrics.accuracy_score(y2_test,yp))
+yp=model2.predict(X2_train)
+print (sklearn.metrics.accuracy_score(y2_train,yp))
+
+proba=[]
+for si in range(3):
+   X1t=copy.deepcopy(X1_test)
+   X1t[:,3*23+20+0]=0
+   X1t[:,3*23+20+1]=0
+   X1t[:,3*23+20+2]=0
+   X1t[:,3*23+20+si]=1
+   p=numpy.array(model1.predict_proba(X1t))
+   pt=[pr[i] for pr,i in zip(p,y1_test)]
+   proba.append(numpy.array(pt)[:,None])
+proba=numpy.concatenate(proba, axis=1)
+print(proba.shape)
+yp=numpy.argmax(proba,axis=1)
+#print(yp)
+print ("Accu on test(cross1):",sklearn.metrics.accuracy_score(y2_test,yp))
+
+proba=[]
+for ai in range(20):
+   X2t=copy.deepcopy(X2_test)
+   X2t[:,3*23:3*23+20]=numpy.zeros(20)
+   X2t[:,3*23+ai]=1
+   p=numpy.array(model2.predict_proba(X2t))
+   pt=[pr[i] for pr,i in zip(p,y2_test)]
+   proba.append(numpy.array(pt)[:,None])
+proba=numpy.concatenate(proba, axis=1)
+print(proba.shape)
+yp=numpy.argmax(proba,axis=1)
+
+#print(yp)
+print ("Accu on test(cross2):",sklearn.metrics.accuracy_score(y1_test,yp))
+
+proba2=model1.predict_proba(X1_test)
+
+P=(proba+proba2)/2
+#P=numpy.maximum(proba,proba2)
+yp=numpy.argmax(P,axis=1)
+print ("Accu combined:",sklearn.metrics.accuracy_score(y1_test,yp))
+
+
+plt.scatter(proba.flatten(),proba2.flatten(),s=1)
+plt.show()
+
+
+
+#cm=confusion_matrix(y_train,yp)
+#print(cm)
+#plt.imshow(numpy.log(cm))
+#plt.xticks(range(3),'~HE')
+#plt.yticks(range(3),'~HE')
+#plt.show()
+
+
+
+#proba=model1.predict_proba(X_train)

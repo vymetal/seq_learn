@@ -1,0 +1,31 @@
+#!/usr/bin/python
+from seqdata import getset_ss
+from sklearn.model_selection import train_test_split
+import matplotlib.pylab as plt
+import sklearn
+import numpy
+import random
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import confusion_matrix
+
+X,y=getset_ss(7)
+X_train,X_test,y_train,y_test = train_test_split(X,y,random_state=1234567, shuffle=True)
+
+model=LogisticRegression(max_iter=500, class_weight='balanced', multi_class="ovr")
+model.fit(X_train, y_train)
+yp=model.predict(X_test)
+print (sklearn.metrics.accuracy_score(y_test,yp))
+
+yp=model.predict(X_train)
+print (sklearn.metrics.accuracy_score(y_train,yp))
+
+cm=confusion_matrix(y_train,yp)
+print(cm)
+plt.imshow(numpy.log(cm))
+plt.xticks(range(3),'~HE')
+plt.yticks(range(3),'~HE')
+plt.show()
+
+
+
+#proba=model1.predict_proba(X_train)

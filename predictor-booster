@@ -1,0 +1,58 @@
+#!/usr/bin/python
+from seqdata import getset
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import SGDClassifier
+from sklearn.pipeline import make_pipeline
+import matplotlib.pylab as plt
+from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
+from sklearn.decomposition import PCA,NMF
+from sklearn.manifold import TSNE,MDS
+import sklearn
+import numpy
+import random
+random.seed(1234567)
+X,y=getset(7)
+X_train,X_test,y_train,y_test = train_test_split(X,y,random_state=1234567, shuffle=True)
+
+sel=[random.uniform(0,1)<0.1 for i in y_train]
+X_train=X_train[sel,:]
+y_train=y_train[sel]
+
+#class_weight='balanced'
+model1=LogisticRegression(multi_class='multinomial',max_iter=500) # solver="saga")
+model1.fit(X_train, y_train)
+yp=model1.predict(X_test)
+print (sklearn.metrics.accuracy_score(y_test,yp))
+yp=model1.predict(X_train)
+print (sklearn.metrics.accuracy_score(y_train,yp))
+
+xtr=[X_train[i,:] for i in range(len(yp)) if yp[i]!=y_train[i]]
+xtr=numpy.concatenate([xtr,X_train],axis=0)
+ytr=[i for i,ip in zip(y_train,yp) if ip!=i]
+ytr=numpy.concatenate([ytr,y_train],axis=0)
+
+model2=LogisticRegression(multi_class='multinomial',max_iter=500) # solver="saga")
+model2.fit(xtr, ytr)
+yp=model2.predict(X_test)
+print (sklearn.metrics.accuracy_score(y_test,yp))
+yp=model2.predict(xtr)
+print (sklearn.metrics.accuracy_score(ytr,yp))
+
+print('....')
+for cf in (0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0):
+   proba=numpy.maximum(model1.predict_proba(X_test),model2.predict_proba(X_test))
+   yp=numpy.argmax(proba,axis=1)
+   print (sklearn.metrics.accuracy_score(y_test,yp))
+
+print('....')
+for cf in (0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0):
+   proba=numpy.maximum(model1.predict_proba(X_train),model2.predict_proba(X_train))
+   yp=numpy.argmax(proba,axis=1)
+   print (sklearn.metrics.accuracy_score(y_train,yp))
+
+
+
+
+
+

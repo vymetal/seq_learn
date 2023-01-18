@@ -1,0 +1,58 @@
+#!/usr/bin/python
+from seqdata import getset
+from sklearn.model_selection import train_test_split
+import matplotlib.pylab as plt
+import sklearn
+import numpy
+import random
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import LinearSVC
+from sklearn.metrics import confusion_matrix
+
+X,y=getset(7)
+X_train,X_test,y_train,y_test = train_test_split(X,numpy.array(y),random_state=1234567, shuffle=True)
+
+model=LogisticRegression(max_iter=500, class_weight='balanced', multi_class="ovr")
+model.fit(X_train, y_train)
+yp=model.predict(X_test)
+print (sklearn.metrics.accuracy_score(y_test,yp))
+
+yp=model.predict(X_train)
+print (sklearn.metrics.accuracy_score(y_train,yp))
+
+cm=confusion_matrix(y_train,yp)
+plt.imshow(numpy.log(cm))
+plt.xticks(range(20),'ACDEFGHIKLMNPQRSTVWY')
+plt.yticks(range(20),'ACDEFGHIKLMNPQRSTVWY')
+plt.show()
+
+#model2=(max_iter=500, class_weight='balanced', multi_class="multinomial")
+model2=LinearSVC(max_iter=500, class_weight='balanced')
+model2.fit(X_train, y_train)
+yp=model2.predict(X_test)
+print (sklearn.metrics.accuracy_score(y_test,yp))
+
+yp=model2.predict(X_train)
+print (sklearn.metrics.accuracy_score(y_train,yp))
+
+cm=confusion_matrix(y_train,yp)
+plt.imshow(numpy.log(cm))
+plt.xticks(range(20),'ACDEFGHIKLMNPQRSTVWY')
+plt.yticks(range(20),'ACDEFGHIKLMNPQRSTVWY')
+plt.show()
+
+
+proba1=model.predict_proba(X_train)
+proba2=model2.predict_proba(X_train)
+for i in range(20):
+   p1=proba1[:,i]
+   p2=proba2[:,i]
+   t1=proba1[y_train==i,i]
+   t2=proba2[y_train==i,i]
+   plt.figure()
+   plt.scatter(p1,p2,s=2)
+   plt.scatter(t1,t2,s=2)
+   c1=numpy.corrcoef(p1,p2)
+   c2=numpy.corrcoef(t1,t2)
+   plt.title("ACDEFGHIKLMNPQRSTVWY"[i]+f": {str(c1)} {str(c2)}")
+   plt.show()
