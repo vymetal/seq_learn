@@ -36,6 +36,19 @@ def getset(length=7, erase=True):
       y.append(s)
       X.append(v.flatten())
    return numpy.array(X),numpy.array(y)
+   
+def getset_ss(length=7, erase=True):
+   fr=fragments(length=length)
+   positions=numpy.array((0,1,2),dtype=numpy.int32)
+   unk=length//2
+   X=[]
+   y=[]
+   for v in fr:
+      s=numpy.dot(v[unk,20:],positions) #get the ss element
+      if erase: v[unk,20:]=numpy.zeros(3) #clean in it
+      y.append(s)
+      X.append(v.flatten())
+   return numpy.array(X),numpy.array(y)
 
 def toseq(v):
    ln=len(v)//23  #
