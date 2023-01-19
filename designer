@@ -14,8 +14,8 @@ with open("predictor.prm",'r') as f:
    params=json.load(f)
 model=LogisticRegression()
 model.set_params(**params["params"])
-model.coef_=params["coef"]
-model.intercept_=params["intercept"]
+model.coef_=numpy.array(params["coef"])
+model.intercept_=numpy.array(params["intercept"])
 
 class permutator():
     def __init__(self):
@@ -57,43 +57,54 @@ class permutator():
         elif k==1:
             s=self._shift(s)
         elif k==2:
-            s=self._shuffle(s)            
-        else:    
+            s=self._shuffle(s)
+        else:
             s=self._swap(s)
         return s
 
 AAA="ACDEFGHIKLMNPQRSTVWY"
 SSS="~HE"
 
-def make_vec(a,s):
+def make_vec(ai,si):
     v=[]
-    for ii,(aa, ss) in enumerate(zip(a,s)):
+    for ii,(aa, ss) in enumerate(zip(ai,si)):
         vv=numpy.zeros(23)
-        if ii!=HALFLEN: vv[AAA.index(aa)]=1
-        vv[SSS.index(ss)+20]=1
+        if ii!=HALFLEN: vv[aa]=1
+        vv[ss+20]=1
         v.append(vv)
     return numpy.array(v).flatten()
 
 
-def seq_sc(sq,ss):
-    x=[make_vec(sq[pos-HALFLEN:pos+HALFLEN+1],s=ss[pos-HALFLEN:pos+HALFLEN+1]) for pos in range(HALFLEN, len(sq)-HALFLEN  ]
-    pb=model.predict_proba(x)
-    ai=[AAA.index(sq[pos]) for pos in range(HALFLEN, len(sq)-HALFLEN)]
+def seq_sc(sqi,ssi):
+    ai=sqi[HALFLEN:-HALFLEN]
+    x=[make_vec(sqi[pos-HALFLEN:pos+HALFLEN+1],ssi[pos-HALFLEN:pos+HALFLEN+1]) for pos in range(HALFLEN, len(sq)-HALFLEN)  ]
+    pb=model.predict_proba(numpy.array(x))
     sc=sum(math.log(p[i]) for p,i in zip(pb,ai))
     return sc
 
 
 #ss="~~~~HHHHHHHHH~~~~~~HHHHHHHH~~~~~EEEEEEE~~~~~EEEEEEE~~~~~~HHHHHHH~~~~~EEEEEEEE~~~~"
+sq="ACDEFGHIKLMNPQRSTVWYACDEFGHIKLMNPQRSTVWYACDEFGHIKLMNPQRSTVWYACDE"
 ss="~~~~EEEEEEEEEE~~~~~HHHHHHHHHHH~~~~~~EEEEEEEEE~~~~~EEEEEEEEEE~~~~"
+ssi=[SSS.index(s) for s in ss]
+sqi=[AAA.index(a) for a in sq]
 
 P=permutator()
 
-cur=seq_sc(sq,ss)
-for cyc in range(100000):
-    nsq=P.permutate(sq[HALFLEN:-HALFLEN])
-    nsq=[*sq[:HALFLEN],*nsq,*sq[-HALFLEN:]]
-    new=seq_sc(nsq,ss)
+cur=seq_sc(sqi,ssi)
+noimpr=0
+MAXNOIMPR=10000
+while True:
+    nsqi=P.permutate(sqi[HALFLEN:-HALFLEN])
+    nsqi=[*sqi[:HALFLEN],*nsqi,*sqi[-HALFLEN:]]
+    new=seq_sc(nsqi,ssi)
     if new>cur:
         cur=new
-        sq=nsq[:]
-        print("".join(sq),cur)
+        sqi=nsqi[:]
+        print("".join([AAA[s] for s in sqi]),cur)
+        noimpr=0
+    else:
+        noimpr+=1
+    if noimpr>MAXNOIMPR:
+      print (f"No improvment in {MAXNOIMPR} cycles, stopping")
+      break
