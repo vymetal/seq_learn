@@ -1,0 +1,49 @@
+#!/usr/bin/python
+
+from seqdata import getset
+import sklearn
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+import random
+import matplotlib.pylab as plt
+import numpy
+import json
+
+random.seed(42)
+
+WINLEN=7
+HALFLEN=WINLEN//2
+
+X,y=getset(WINLEN)
+#mask=X[:,HALFLEN*23+20]==0
+#X=X[mask,:]
+#y=y[mask]
+X_train,X_test,y_train,y_test = train_test_split(X,y,random_state=1234567, shuffle=True)
+
+#fit model
+
+model=LogisticRegression(class_weight='balanced', penalty='l2',solver='lbfgs',multi_class="multinomial", C=10, max_iter=500)
+model.fit(X_train, y_train)
+yp=model.predict(X_test)
+print("overall accuracy:",sklearn.metrics.accuracy_score(y_test,yp))
+print("per aa-accuracy:")
+sd=[]
+for aa in range(20):
+   gt=y_test==aa
+   pa=yp==aa
+   tp=numpy.sum(numpy.logical_and(pa,gt))
+   tn=numpy.sum(numpy.logical_and(numpy.logical_not(pa),numpy.logical_not(gt)))
+   fp=numpy.sum(numpy.logical_and(pa,numpy.logical_not(gt)))
+   fn=numpy.sum(numpy.logical_and(numpy.logical_not(pa),gt))
+   sd.append([tp/(tp+fp),tp/(tp+fn),tn/(tn+fp)])
+   #print(f"tp:{tp}, tn:{tn}, fp:{fp} fn:{fn} accuracy:{(tp+tn)/(tp+tn+fp+fn)}, precision:{tp/(tp+fp)}, sensitivity:{tp/(tp+fn)}, specificity:{tn/(tn+fp)}")
+   print('ACDEFGHIKLMNPQRSTVWY'[aa],f"prec:{sd[-1][0]:.3f}, sens:{sd[-1][1]:.3f}, spec:{sd[-1][2]:.3f}")
+print (numpy.mean(sd, axis=0))
+
+params={}
+params['params']=model.get_params()
+params['coef']=model.coef_.tolist()
+params['intercept']=model.intercept_.tolist()
+json_txt=json.dumps(params)
+with open("predictor.prm",'w') as f:
+   f.write(json_txt)

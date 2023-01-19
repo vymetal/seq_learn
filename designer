@@ -1,0 +1,99 @@
+#!/usr/bin/python
+import math
+import random
+import numpy
+import json
+from sklearn.linear_model import LogisticRegression
+
+random.seed(42)
+WINLEN=7
+HALFLEN=WINLEN//2
+
+#load predictor
+with open("predictor.prm",'r') as f:
+   params=json.load(f)
+model=LogisticRegression()
+model.set_params(**params["params"])
+model.coef_=params["coef"]
+model.intercept_=params["intercept"]
+
+class permutator():
+    def __init__(self):
+        pass
+
+    def _swap(self,seq):
+        pos1,pos2=random.sample(range(0,len(seq)),2)
+        seq[pos1],seq[pos2]=seq[pos2],seq[pos1]
+        return seq
+
+    def _reverse(self,seq):
+        pos1,pos2=random.sample(range(0,len(seq)+1),2)
+        if pos1>pos2: pos1,pos2=pos2,pos1
+        nseq=[*seq[:pos1],*seq[pos1:pos2][::-1],*seq[pos2:]]
+        return nseq
+
+    def _shift(self,seq):
+        pos1,pos2=random.sample(range(0,len(seq)),2)
+        if pos1>pos2: pos1,pos2=pos2,pos1
+        if random.choice((0,1)):    
+            nseq=[*seq[:pos1],seq[pos2],*seq[pos1:pos2-1],*seq[pos2:]]    
+        else:
+            nseq=[*seq[:pos1],*seq[pos1+1:pos2],seq[pos1],*seq[pos2:]]    
+        return nseq 
+
+    def _shuffle(self,seq):
+        pos1,pos2=random.sample(range(0,len(seq)+1),2)
+        if pos1>pos2: pos1,pos2=pos2,pos1
+        x=seq[pos1:pos2]
+        random.shuffle(x)
+        nseq=[*seq[:pos1],*x,*seq[pos2:]]
+        return nseq
+
+    def permutate(self,seq):
+        s=seq[:]
+        k=random.choice(range(20))
+        if k==0:
+            s=self._reverse(s)
+        elif k==1:
+            s=self._shift(s)
+        elif k==2:
+            s=self._shuffle(s)            
+        else:    
+            s=self._swap(s)
+        return s
+
+AAA="ACDEFGHIKLMNPQRSTVWY"
+SSS="~HE"
+
+def make_vec(a,s):
+    v=[]
+    for ii,(aa, ss) in enumerate(zip(a,s)):
+        vv=numpy.zeros(23)
+        if ii!=HALFLEN: vv[AAA.index(aa)]=1
+        vv[SSS.index(ss)+20]=1
+        v.append(vv)
+    return numpy.array(v).flatten()
+
+
+def seq_sc(sq,ss):
+    x=[make_vec(sq[pos-HALFLEN:pos+HALFLEN+1],s=ss[pos-HALFLEN:pos+HALFLEN+1]) for pos in range(HALFLEN, len(sq)-HALFLEN  ]
+    pb=model.predict_proba(x)
+    ai=[AAA.index(sq[pos]) for pos in range(HALFLEN, len(sq)-HALFLEN)]
+    sc=sum(math.log(p[i]) for p,i in zip(pb,ai))
+    return sc
+
+
+#ss="~~~~HHHHHHHHH~~~~~~HHHHHHHH~~~~~EEEEEEE~~~~~EEEEEEE~~~~~~HHHHHHH~~~~~EEEEEEEE~~~~"
+ss="~~~~EEEEEEEEEE~~~~~HHHHHHHHHHH~~~~~~EEEEEEEEE~~~~~EEEEEEEEEE~~~~"
+
+P=permutator()
+
+cur=seq_sc(sq,ss)
+for cyc in range(100000):
+    nsq=P.permutate(sq[HALFLEN:-HALFLEN])
+    nsq=[*sq[:HALFLEN],*nsq,*sq[-HALFLEN:]]
+    new=seq_sc(nsq,ss)
+    if new>cur:
+        cur=new
+        sq=nsq[:]
+        print("".join(sq),cur)
