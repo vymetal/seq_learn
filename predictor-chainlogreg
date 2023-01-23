@@ -1,0 +1,72 @@
+#!/usr/bin/python
+from seqdata import getset
+from sklearn.model_selection import train_test_split
+import matplotlib.pylab as plt
+import sklearn
+import numpy
+import random
+import copy
+from sklearn.metrics import confusion_matrix
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import AdaBoostClassifier
+
+class multi():
+   def __init__(self):
+      return
+      
+   def fit(self, X,y):
+      self.classifiers=[]
+      self.classifiers.append(LogisticRegression(class_weight=None,max_iter=500))
+      self.classifiers[-1].fit(X,y)
+      yp=self.classifiers[-1].predict(X)
+      pb1=self.classifiers[-1].predict_proba(X)
+      accu=sklearn.metrics.accuracy_score(y,yp)
+      print(f"Training accuracy {accu}")
+      X2=numpy.concatenate([X,pb1],axis=1)
+      
+      self.classifiers.append(LogisticRegression(class_weight='balanced',max_iter=500))
+      self.classifiers[-1].fit(X2,y)
+      yp=self.classifiers[-1].predict(X2)
+      pb2=self.classifiers[-1].predict_proba(X2)
+      accu=sklearn.metrics.accuracy_score(y,yp)
+      print(f"Training accuracy {accu}")
+      X3=numpy.concatenate([X2,pb2],axis=1)
+      
+#      self.classifiers.append(LogisticRegression(class_weight='balanced',max_iter=500))
+#      self.classifiers[-1].fit(X3,y)
+#      yp=self.classifiers[-1].predict(X3)
+#      pb3=self.classifiers[-1].predict_proba(X3)
+#      accu=sklearn.metrics.accuracy_score(y,yp)
+#      print(f"Training accuracy {accu}")
+#      X4=numpy.concatenate([X3,pb3],axis=1)      
+      
+      return
+
+   def predict(self,X):
+      p=numpy.argmax(self.predict_proba(X),axis=1)
+      return p
+      
+   def predict_proba(self,X):
+      pb1=self.classifiers[0].predict_proba(X)
+      X2=numpy.concatenate([X,pb1],axis=1)
+      pb2=self.classifiers[1].predict_proba(X2)
+#      X3=numpy.concatenate([X2,pb2],axis=1)      
+#      pb3=self.classifiers[2].predict_proba(X3)
+      return pb2
+
+
+X,y=getset(7)
+X_train,X_test,y_train,y_test = train_test_split(X,y,random_state=1234567, shuffle=True)
+
+model=multi()
+model.fit(X_train, y_train)
+yp=model.predict(X_test)
+print (sklearn.metrics.accuracy_score(y_test,yp))
+
+yp=model.predict(X_train)
+print (sklearn.metrics.accuracy_score(y_train,yp))
+
+cm=confusion_matrix(y_train,yp)
+plt.imshow(numpy.log(cm))
+plt.show()
+

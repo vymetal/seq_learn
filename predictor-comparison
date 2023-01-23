@@ -18,6 +18,7 @@ yp=model.predict(X_test)
 print (sklearn.metrics.accuracy_score(y_test,yp))
 
 yp=model.predict(X_train)
+Q1=yp
 print (sklearn.metrics.accuracy_score(y_train,yp))
 
 cm=confusion_matrix(y_train,yp)
@@ -26,14 +27,17 @@ plt.xticks(range(20),'ACDEFGHIKLMNPQRSTVWY')
 plt.yticks(range(20),'ACDEFGHIKLMNPQRSTVWY')
 plt.show()
 
-#model2=(max_iter=500, class_weight='balanced', multi_class="multinomial")
-model2=LinearSVC(max_iter=500, class_weight='balanced')
+model2=LogisticRegression(max_iter=500, class_weight='balanced', multi_class="multinomial")
+#model2=LinearSVC(max_iter=500, class_weight='balanced')
 model2.fit(X_train, y_train)
 yp=model2.predict(X_test)
 print (sklearn.metrics.accuracy_score(y_test,yp))
 
 yp=model2.predict(X_train)
+Q2=yp
 print (sklearn.metrics.accuracy_score(y_train,yp))
+
+print ("Contra:",sklearn.metrics.accuracy_score(Q1,Q2))
 
 cm=confusion_matrix(y_train,yp)
 plt.imshow(numpy.log(cm))

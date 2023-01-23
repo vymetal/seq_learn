@@ -1,10 +1,11 @@
 #!/usr/bin/python
 
-from seqdata import getset
+from seqdata import getset,toseq
 import sklearn
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 import random
+import math
 import matplotlib.pylab as plt
 import numpy
 import json
@@ -15,15 +16,47 @@ WINLEN=7
 HALFLEN=WINLEN//2
 
 X,y=getset(WINLEN)
-#mask=X[:,HALFLEN*23+20]==0
-#X=X[mask,:]
-#y=y[mask]
 X_train,X_test,y_train,y_test = train_test_split(X,y,random_state=1234567, shuffle=True)
 
-#fit model
+#get weigths
+ss=[toseq(x).split('|')[1] for x in X_train]
+ssstats={'~':0,'H':0,'E':0}
+for s in ss: ssstats[s[HALFLEN]]+=1
+print(ssstats)
+#tripstat={}
+#for s in ss:
+#   k=(s[HALFLEN-1],s[HALFLEN],s[HALFLEN+1])
+#   if k not in tripstat: tripstat[k]=0
+#   tripstat[k]+=1
+#print(tripstat)
+aastats=dict([(i,0) for i in range(20)])
 
-model=LogisticRegression(class_weight='balanced', penalty='l2',solver='lbfgs',multi_class="multinomial", C=10, max_iter=500)
-model.fit(X_train, y_train)
+for i in y_train: aastats[i]+=1
+print(aastats)
+
+asstats={}
+for s,a in zip(ss,y_train):
+   k=(a,s[HALFLEN])
+   if k not in asstats: asstats[k]=0
+   asstats[k]+=1
+print(asstats)
+
+w=[]
+for s,i in zip(ss,y_train):
+   k=(i,s[HALFLEN])
+   v=asstats[k]**0.5
+#   k=(s[HALFLEN-1],s[HALFLEN],s[HALFLEN+1])
+#   v=v*ssstats[s[HALFLEN]]
+#   vv=1
+#   for z in s: vv=vv*ssstats[z]
+#   v=v*vv
+   w.append(1.0/v)
+w=numpy.array(w)
+w=w/numpy.sum(w)*len(y_train)
+
+#fit model
+model=LogisticRegression(class_weight=None, penalty='l2',solver='lbfgs',multi_class="ovr", C=1, max_iter=500)
+model.fit(X_train, y_train) #,sample_weight=w)
 yp=model.predict(X_test)
 print("overall accuracy:",sklearn.metrics.accuracy_score(y_test,yp))
 print("per aa-accuracy:")

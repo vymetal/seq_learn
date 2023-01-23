@@ -1,0 +1,86 @@
+#!/usr/bin/python
+
+from seqdata import getset,toseq
+import sklearn
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+import random
+import math
+import matplotlib.pylab as plt
+import numpy
+import json
+
+random.seed(42)
+
+WINLEN=7
+HALFLEN=WINLEN//2
+
+X,y=getset(WINLEN)
+X0_train,X0_test,y0_train,y0_test = train_test_split(X,y,random_state=1234567, shuffle=True)
+
+def prep_data(AA):
+    y_train=[1 if yy==AA else 0 for yy in y0_train]
+    y_test=[1 if yy==AA else 0 for yy in y0_test]
+    return X0_train,X0_test,y_train,y_test
+
+def getw(X_train,y_train):
+   s=[0,0,0]
+   for v,i in zip(X_train,y_train):
+      if i==1:
+         if v[HALFLEN*23+20]==1: s[0]+=1
+         if v[HALFLEN*23+21]==1: s[1]+=1
+         if v[HALFLEN*23+22]==1: s[2]+=1
+   w=[1 for i in y_train]
+   for v,i,ii in zip(X_train,y_train,range(len(y_train))):
+      if i==1:
+         if v[HALFLEN*23+20]==1: w[ii]/=s[0]
+         if v[HALFLEN*23+21]==1: w[ii]/=s[1]
+         if v[HALFLEN*23+22]==1: w[ii]/=s[2]
+   sum1=sum([v for v,i in zip(w,y_train) if i==1])
+   sum0=sum([v for v,i in zip(w,y_train) if i==0])
+   for ii,i in enumerate(y_train):
+      if i==1: w[ii]/=sum1
+      if i==0: w[ii]/=sum0
+   w=numpy.array(w)/sum(w)*len(y_train)
+   return w
+#fit models
+models=[]
+scores=[]
+for aa in range(20):
+    X_train,X_test,y_train,y_test=prep_data(aa)
+    w=getw(X_train,y_train)
+    model=LogisticRegression(class_weight=None, penalty='l2',solver='lbfgs')
+    model.fit(X_train, y_train,sample_weight=w)
+    print(aa,model.score(X_train, y_train),model.score(X_test, y_test))
+    models.append(model)
+
+
+#predict all 20 class
+pr=[m.predict_proba(X0_test)[:,1][:,None] for m in models]
+pr=numpy.concatenate(pr, axis=1)
+print(pr.shape)
+
+yp=numpy.argmax(pr,axis=1)
+print("overall accuracy:",sklearn.metrics.accuracy_score(y0_test,yp))
+sd=[]
+for aa in range(20):
+   gt=y0_test==aa
+   pa=yp==aa
+   tp=numpy.sum(numpy.logical_and(pa,gt))
+   tn=numpy.sum(numpy.logical_and(numpy.logical_not(pa),numpy.logical_not(gt)))
+   fp=numpy.sum(numpy.logical_and(pa,numpy.logical_not(gt)))
+   fn=numpy.sum(numpy.logical_and(numpy.logical_not(pa),gt))
+   sd.append([tp/(tp+fp),tp/(tp+fn),tn/(tn+fp)])
+   #print(f"tp:{tp}, tn:{tn}, fp:{fp} fn:{fn} accuracy:{(tp+tn)/(tp+tn+fp+fn)}, precision:{tp/(tp+fp)}, sensitivity:{tp/(tp+fn)}, specificity:{tn/(tn+fp)}")
+   print('ACDEFGHIKLMNPQRSTVWY'[aa],f"prec:{sd[-1][0]:.3f}, sens:{sd[-1][1]:.3f}, spec:{sd[-1][2]:.3f}")
+print (numpy.mean(sd, axis=0))
+
+params={}
+for im,m in enumerate(models):
+   params[im]={}
+   params[im]['coef']=m.coef_.tolist()
+   params[im]['intercept']=m.intercept_.tolist()
+   
+json_txt=json.dumps(params)
+with open("predictor.prm",'w') as f:
+   f.write(json_txt)

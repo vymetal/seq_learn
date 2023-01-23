@@ -5,7 +5,7 @@ import numpy
 import json
 from sklearn.linear_model import LogisticRegression
 
-random.seed(42)
+#random.seed(3)
 WINLEN=7
 HALFLEN=WINLEN//2
 
@@ -82,29 +82,45 @@ def seq_sc(sqi,ssi):
     sc=sum(math.log(p[i]) for p,i in zip(pb,ai))
     return sc
 
+def decode_sq(sqi):
+   return "".join([AAA[s] for s in sqi])
+   
+def optimize(sqi,ssi):
+   P=permutator()
+   cur=seq_sc(sqi,ssi)
+   noimpr=0
+   MAXNOIMPR=10000
+   while True:
+#       nsqi=P.permutate(sqi[HALFLEN:-HALFLEN])
+#       nsqi=[*sqi[:HALFLEN],*nsqi,*sqi[-HALFLEN:]]
+       nsqi=P.permutate(sqi)
+       new=seq_sc(nsqi,ssi)
+       if new>cur:
+           cur=new
+           sqi=nsqi[:]
+           print(decode_sq(sqi),cur)
+           noimpr=0
+       else:
+           noimpr+=1
+       if noimpr>MAXNOIMPR:
+         print (f"No improvment in {MAXNOIMPR} cycles, stopping")
+         break
+   return (cur,sqi)
+
 
 #ss="~~~~HHHHHHHHH~~~~~~HHHHHHHH~~~~~EEEEEEE~~~~~EEEEEEE~~~~~~HHHHHHH~~~~~EEEEEEEE~~~~"
-sq="ACDEFGHIKLMNPQRSTVWYACDEFGHIKLMNPQRSTVWYACDEFGHIKLMNPQRSTVWYACDE"
-ss="~~~~EEEEEEEEEE~~~~~HHHHHHHHHHH~~~~~~EEEEEEEEE~~~~~EEEEEEEEEE~~~~"
+#sq="ACDEFGHIKLMNPQRSTVWYACDEFGHIKLMNPQRSTVWYACDEFGHIKLMNPQRSTVWYACDE"
+#ss="~~~~EEEEEEEEEE~~~~~HHHHHHHHHHH~~~~~~EEEEEEEEE~~~~~EEEEEEEEEE~~~~"
+sq="MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG"
+ss="~EEEEEE~~~~EEEEE~~~~~~HHHHHHHHHHHH~~~~~~EEEEEEEEE~~~~~~~~~~~~~~~~EEEEEE~~~~~"
 ssi=[SSS.index(s) for s in ss]
 sqi=[AAA.index(a) for a in sq]
+print(seq_sc(sqi,ssi))
 
-P=permutator()
-
-cur=seq_sc(sqi,ssi)
-noimpr=0
-MAXNOIMPR=10000
-while True:
-    nsqi=P.permutate(sqi[HALFLEN:-HALFLEN])
-    nsqi=[*sqi[:HALFLEN],*nsqi,*sqi[-HALFLEN:]]
-    new=seq_sc(nsqi,ssi)
-    if new>cur:
-        cur=new
-        sqi=nsqi[:]
-        print("".join([AAA[s] for s in sqi]),cur)
-        noimpr=0
-    else:
-        noimpr+=1
-    if noimpr>MAXNOIMPR:
-      print (f"No improvment in {MAXNOIMPR} cycles, stopping")
-      break
+results=[]
+for cyc in range(10):
+   random.shuffle(sqi)
+   results.append(optimize(sqi,ssi))
+results.sort()
+for sc,sq in results:
+   print (sc,decode_sq(sq))
