@@ -35,7 +35,7 @@ class permutator():
     def _shift(self,seq):
         pos1,pos2=random.sample(range(0,len(seq)),2)
         if pos1>pos2: pos1,pos2=pos2,pos1
-        if random.choice((0,1)):    
+        if random.choice((0,1)):
             nseq=[*seq[:pos1],seq[pos2],*seq[pos1:pos2-1],*seq[pos2:]]    
         else:
             nseq=[*seq[:pos1],*seq[pos1+1:pos2],seq[pos1],*seq[pos2:]]    
@@ -89,7 +89,7 @@ def optimize(sqi,ssi):
    P=permutator()
    cur=seq_sc(sqi,ssi)
    noimpr=0
-   MAXNOIMPR=10000
+   MAXNOIMPR=1000
    while True:
 #       nsqi=P.permutate(sqi[HALFLEN:-HALFLEN])
 #       nsqi=[*sqi[:HALFLEN],*nsqi,*sqi[-HALFLEN:]]
@@ -112,15 +112,19 @@ def optimize(sqi,ssi):
 #sq="ACDEFGHIKLMNPQRSTVWYACDEFGHIKLMNPQRSTVWYACDEFGHIKLMNPQRSTVWYACDE"
 #ss="~~~~EEEEEEEEEE~~~~~HHHHHHHHHHH~~~~~~EEEEEEEEE~~~~~EEEEEEEEEE~~~~"
 sq="MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG"
+#ss="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 ss="~EEEEEE~~~~EEEEE~~~~~~HHHHHHHHHHHH~~~~~~EEEEEEEEE~~~~~~~~~~~~~~~~EEEEEE~~~~~"
 ssi=[SSS.index(s) for s in ss]
 sqi=[AAA.index(a) for a in sq]
 print(seq_sc(sqi,ssi))
 
 results=[]
-for cyc in range(10):
+for cyc in range(100):
    random.shuffle(sqi)
-   results.append(optimize(sqi,ssi))
-results.sort()
-for sc,sq in results:
-   print (sc,decode_sq(sq))
+   print('start:',decode_sq(sqi))
+   results.append(optimize(sqi[:],ssi))
+   results.sort()
+   #results continuously
+   for sc,sq in results:
+      print (sc,decode_sq(sq))
+      print (sc,ss)
