@@ -129,20 +129,18 @@ def optimize(sqi,ssi):
    return (cur,sqi)
 
 
-#ss="~~~~HHHHHHHHH~~~~~~HHHHHHHH~~~~~EEEEEEE~~~~~EEEEEEE~~~~~~HHHHHHH~~~~~EEEEEEEE~~~~"
-#sq="ACDEFGHIKLMNPQRSTVWYACDEFGHIKLMNPQRSTVWYACDEFGHIKLMNPQRSTVWYACDE"
-#ss="~~~~EEEEEEEEEE~~~~~HHHHHHHHHHH~~~~~~EEEEEEEEE~~~~~EEEEEEEEEE~~~~"
-#sq="MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG"
-ss="~~~EEEEEEEEEEEEE~~~~~~~~EEEEEEEEEEEEEEEEEEEEE~~~~~~~~EEEEEEEEEEEEEEEEEEE~~~~"
-#ss="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+sq="MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG"
 #ss="~EEEEEE~~~~EEEEE~~~~~~HHHHHHHHHHHH~~~~~~EEEEEEEEE~~~~~~~~~~~~~~~~EEEEEE~~~~~"
+#ss="~~~EEEEEEEEEEEEE~~~~~~~~EEEEEEEEEEEEEEEEEEEEE~~~~~~~~EEEEEEEEEEEEEEEEEEE~~~~"
+#ss="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+ss="~EEEEEEEE~~~~~~HHHHHHHHHHH~~~~EEEEEEEE~~~"
 ssi=[SSS.index(s) for s in ss]
 #sqi=[AAA.index(a) for a in sq]
 sqi=propose_seq(ssi)
 print(seq_sc(sqi,ssi))
 
 results=[]
-for cyc in range(10):
+for cyc in range(50):
    random.shuffle(sqi)
    print('start:',decode_sq(sqi))
    results.append(optimize(sqi[:],ssi))
