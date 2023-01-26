@@ -6,7 +6,7 @@ import json
 from sklearn.linear_model import LogisticRegression
 
 #random.seed(3)
-WINLEN=7
+WINLEN=5
 HALFLEN=WINLEN//2
 
 #load predictor
@@ -77,10 +77,21 @@ def make_vec(ai,si):
 
 def seq_sc(sqi,ssi):
     ai=sqi[HALFLEN:-HALFLEN]
-    x=[make_vec(sqi[pos-HALFLEN:pos+HALFLEN+1],ssi[pos-HALFLEN:pos+HALFLEN+1]) for pos in range(HALFLEN, len(sq)-HALFLEN)  ]
+    x=[make_vec(sqi[pos-HALFLEN:pos+HALFLEN+1],ssi[pos-HALFLEN:pos+HALFLEN+1]) for pos in range(HALFLEN, len(sqi)-HALFLEN)  ]
     pb=model.predict_proba(numpy.array(x))
     sc=sum(math.log(p[i]) for p,i in zip(pb,ai))
     return sc
+
+def propose_seq(ssi):
+   distrib={0: [3241, 581, 4047, 2133, 1392, 6380, 1127, 1438, 2412, 2484, 632, 3408, 3767, 1560, 1764, 3782, 3062, 1886, 665, 1497],
+            1: [4964, 425, 2390, 3336, 1687, 1522, 805, 2110, 2655, 4238, 1013, 1517, 1106, 1957, 2163, 2104, 1824, 2468, 824, 1618],
+            2: [1777, 423, 1000, 1168, 1702, 1505, 671, 2569, 1285, 2647, 616, 931, 550, 879, 1155, 1555, 2104, 3599, 696, 1669]}
+   distrib={0: [3360, 605, 3962, 2133, 1448, 6455, 1112, 1400, 2519, 2535, 610, 3420, 3841, 1517, 1731, 3815, 3087, 1950, 662, 1512], 1: [4995, 430, 2404, 3370, 1708, 1543, 796, 2112, 2714, 4246, 1035, 1548, 1139, 1996, 2206, 2117, 1812, 2484, 814, 1669], 2: [1758, 435, 1005, 1201, 1684, 1504, 659, 2572, 1330, 2626, 613, 911, 563, 874, 1171, 1555, 2136, 3698, 700, 1670]}
+            
+   for i in distrib:
+      distrib[i]=numpy.array(distrib[i])*1.0/sum(distrib[i])
+   sqi=[numpy.random.choice(20,1,p=distrib[i])[0] for i in ssi]
+   return sqi 
 
 def decode_sq(sqi):
    return "".join([AAA[s] for s in sqi])
@@ -91,8 +102,6 @@ def optimize(sqi,ssi):
    noimpr=0
    MAXNOIMPR=1000
    while True:
-#       nsqi=P.permutate(sqi[HALFLEN:-HALFLEN])
-#       nsqi=[*sqi[:HALFLEN],*nsqi,*sqi[-HALFLEN:]]
        nsqi=P.permutate(sqi)
        new=seq_sc(nsqi,ssi)
        if new>cur:
@@ -111,15 +120,17 @@ def optimize(sqi,ssi):
 #ss="~~~~HHHHHHHHH~~~~~~HHHHHHHH~~~~~EEEEEEE~~~~~EEEEEEE~~~~~~HHHHHHH~~~~~EEEEEEEE~~~~"
 #sq="ACDEFGHIKLMNPQRSTVWYACDEFGHIKLMNPQRSTVWYACDEFGHIKLMNPQRSTVWYACDE"
 #ss="~~~~EEEEEEEEEE~~~~~HHHHHHHHHHH~~~~~~EEEEEEEEE~~~~~EEEEEEEEEE~~~~"
-sq="MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG"
+#sq="MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG"
+ss="~~~EEEEEEEEEEEEE~~~~~~~~EEEEEEEEEEEEEEEEEEEEE~~~~~~~~EEEEEEEEEEEEEEEEEEE~~~~"
 #ss="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-ss="~EEEEEE~~~~EEEEE~~~~~~HHHHHHHHHHHH~~~~~~EEEEEEEEE~~~~~~~~~~~~~~~~EEEEEE~~~~~"
+#ss="~EEEEEE~~~~EEEEE~~~~~~HHHHHHHHHHHH~~~~~~EEEEEEEEE~~~~~~~~~~~~~~~~EEEEEE~~~~~"
 ssi=[SSS.index(s) for s in ss]
-sqi=[AAA.index(a) for a in sq]
+#sqi=[AAA.index(a) for a in sq]
+sqi=propose_seq(ssi)
 print(seq_sc(sqi,ssi))
 
 results=[]
-for cyc in range(100):
+for cyc in range(10):
    random.shuffle(sqi)
    print('start:',decode_sq(sqi))
    results.append(optimize(sqi[:],ssi))
