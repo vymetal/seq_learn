@@ -12,10 +12,18 @@ HALFLEN=WINLEN//2
 #load predictor
 with open("predictor.prm",'r') as f:
    params=json.load(f)
-model=LogisticRegression()
-model.set_params(**params["params"])
-model.coef_=numpy.array(params["coef"])
-model.intercept_=numpy.array(params["intercept"])
+   
+models=[]
+for ii in range(3):
+   models.append(LogisticRegression())
+   p=params[str(ii)]
+   models[-1].set_params(**p["params"])
+   models[-1].coef_=numpy.array(p["coef"])
+   models[-1].intercept_=numpy.array(p["intercept"])
+#model=LogisticRegression()
+#model.set_params(**params["params"])
+#model.coef_=numpy.array(params["coef"])
+#model.intercept_=numpy.array(params["intercept"])
 
 class permutator():
     def __init__(self):
@@ -77,8 +85,12 @@ def make_vec(ai,si):
 
 def seq_sc(sqi,ssi):
     ai=sqi[HALFLEN:-HALFLEN]
+    si=ssi[HALFLEN:-HALFLEN]
     x=[make_vec(sqi[pos-HALFLEN:pos+HALFLEN+1],ssi[pos-HALFLEN:pos+HALFLEN+1]) for pos in range(HALFLEN, len(sqi)-HALFLEN)  ]
-    pb=model.predict_proba(numpy.array(x))
+    x=numpy.array(x)
+    pbs=[models[0].predict_proba(x),models[1].predict_proba(x),models[2].predict_proba(x)]
+    pb=[pbs[s][ii] for ii,s in enumerate(si)]
+#    pb=model.predict_proba(numpy.array(x))
     sc=sum(math.log(p[i]) for p,i in zip(pb,ai))
     return sc
 
